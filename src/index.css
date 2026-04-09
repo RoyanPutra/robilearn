@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Nunito', sans-serif;
+  background-color: #F8FAFF;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+::-webkit-scrollbar       { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 99px; }
+
+.font-title { font-family: 'Fredoka One', cursive; }
+.robi-eye   { animation: blink 4s ease-in-out infinite; transform-origin: center; }
+
+.opt-idle     { @apply bg-white border-2 border-ink-faint border-b-4 rounded-2xl cursor-pointer hover:border-primary hover:bg-primary-light hover:-translate-y-1 transition-all duration-150; }
+.opt-selected { @apply bg-primary-light border-primary border-2 border-b-4 rounded-2xl; }
+.opt-correct  { @apply bg-ok-light border-ok border-2 border-b-4 rounded-2xl text-ok-dark; }
+.opt-wrong    { @apply bg-bad-light border-bad border-2 border-b-4 rounded-2xl text-bad-dark animate-shake; }
+
+.mi-idle    { @apply bg-white border-2 border-ink-faint border-b-4 rounded-xl cursor-pointer hover:border-primary hover:bg-primary-light transition-all; }
+.mi-sel     { @apply bg-primary-light border-primary border-2 border-b-4 rounded-xl scale-105; }
+.mi-matched { @apply bg-ok-light border-ok border-2 border-b-4 rounded-xl cursor-default; }
+.mi-bad     { @apply bg-bad-light border-bad border-2 border-b-4 rounded-xl animate-shake; }
+
+.btn-primary { @apply bg-primary border-b-4 border-primary-dark text-white font-title text-lg rounded-2xl px-8 py-3 cursor-pointer hover:-translate-y-1 hover:brightness-110 active:translate-y-0 active:border-b-2 transition-all; }
+.btn-ok      { @apply bg-ok border-b-4 border-ok-dark text-white font-title text-lg rounded-2xl px-8 py-3 cursor-pointer hover:-translate-y-1 active:translate-y-0 active:border-b-2 transition-all; }
+.btn-gray    { @apply bg-ink-faint border-b-4 border-ink-muted text-ink-muted font-title text-lg rounded-2xl px-8 py-3 cursor-pointer hover:-translate-y-1 transition-all; }
+
+.card { @apply bg-white rounded-3xl shadow-sm border border-ink-faint/50; }
