@@ -1,95 +1,263 @@
 import { useState, useEffect } from 'react';
-import { useGameStore }         from '../../store/gameStore';
-import QuestionDisplay          from '../ui/QuestionDisplay';
-import MatchQuestion            from '../ui/MatchQuestion';
-import Robi                     from '../ui/Robi';
+import { useGameStore }           from '../../store/gameStore';
+import QuestionDisplay            from '../ui/QuestionDisplay';
+import MatchQuestion              from '../ui/MatchQuestion';
 import { ComboFlash, ScreenFlash } from '../ui/ComboFlash';
 import { sfxCorrect, sfxWrong, sfxClick, sfxHeart } from '../../lib/audio';
 
-const CS=['Kamu pintar sekali!','Luar biasa!','Robi bangga!','Terus semangat!','Mantap jiwa!'];
-const WL=['Hampir! Coba lagi ya! 💪','Jangan menyerah! 🌟','Robi percaya kamu bisa!','Salah itu pelajaran! 🧠'];
+const CORRECT_MSG = ['Luar biasa! 🌟','Robi bangga! 🤖','Betul sekali! ✨','Kamu hebat! 💪','Mantap jiwa! 🔥'];
+const WRONG_MSG   = ['Hampir benar! Coba lagi 💪','Jangan menyerah! 🌟','Robi percaya kamu bisa!','Belajar dari salah ya! 🧠'];
+
+/* Robi kecil inline SVG */
+function MiniRobi({ emotion = 'happy' }) {
+  const mouth = emotion === 'sad'
+    ? 'M34 64 Q50 54 66 64'
+    : emotion === 'excited'
+    ? 'M30 56 Q50 74 70 56'
+    : 'M34 58 Q50 70 66 58';
+  return (
+    <svg viewBox="0 0 100 120" width="56" height="67" style={{display:'block',flexShrink:0}}>
+      <g style={{transformOrigin:'50% 100%',animation:'sway 2s ease-in-out infinite'}}>
+        <line x1="50" y1="10" x2="50" y2="25" stroke="#3B82F6" strokeWidth="4" strokeLinecap="round"/>
+        <circle cx="50" cy="7" r="7" fill="#F59E0B" stroke="#fff" strokeWidth="2"/>
+      </g>
+      <rect x="18" y="24" width="64" height="48" rx="18" fill="#3B82F6" stroke="#1D4ED8" strokeWidth="3"/>
+      <rect x="9" y="38" width="11" height="18" rx="5" fill="#1D4ED8"/>
+      <rect x="80" y="38" width="11" height="18" rx="5" fill="#1D4ED8"/>
+      <rect x="26" y="34" width="20" height="20" rx="8" fill="white"/>
+      <rect x="54" y="34" width="20" height="20" rx="8" fill="white"/>
+      <circle cx="36" cy="44" r="7" fill="#1E293B"/>
+      <circle cx="64" cy="44" r="7" fill="#1E293B"/>
+      <circle cx="38" cy="42" r="2.5" fill="white"/>
+      <circle cx="66" cy="42" r="2.5" fill="white"/>
+      <path d={mouth} stroke="#1D4ED8" strokeWidth="3.5" strokeLinecap="round" fill="none"/>
+      <rect x="24" y="74" width="52" height="36" rx="14" fill="#3B82F6" stroke="#1D4ED8" strokeWidth="3"/>
+      <rect x="32" y="80" width="36" height="22" rx="8" fill="#EFF6FF" stroke="#1D4ED8" strokeWidth="2"/>
+      <circle cx="40" cy="91" r="4" fill="#22C55E"/>
+      <circle cx="50" cy="91" r="4" fill="#F59E0B"/>
+      <circle cx="60" cy="91" r="4" fill="#3B82F6"/>
+      <rect x="5" y="76" width="20" height="12" rx="6" fill="#1D4ED8"/>
+      <rect x="75" y="76" width="20" height="12" rx="6" fill="#1D4ED8"/>
+      <rect x="30" y="108" width="16" height="10" rx="5" fill="#1D4ED8"/>
+      <rect x="54" y="108" width="16" height="10" rx="5" fill="#1D4ED8"/>
+    </svg>
+  );
+}
 
 export default function LessonScreen() {
-  const { questions,qIndex,wrongCount,combo,hearts,maxHearts,nextQ,incWrong,incCorrect,addXP,addGems,goHomeFromLesson,retryLesson,toast } = useGameStore();
-  const [selected,setSelected]=useState(null);
-  const [checked,setChecked]=useState(false);
-  const [correct,setCorrect]=useState(null);
-  const [flash,setFlash]=useState(null);
-  const [matchDone,setMatchDone]=useState(false);
+  const {
+    questions, qIndex, wrongCount, combo,
+    hearts, maxHearts,
+    nextQ, incWrong, incCorrect, loseHeart,
+    addXP, addGems,
+    goHomeFromLesson, retryLesson, toast,
+  } = useGameStore();
 
-  const q=questions[qIndex];
-  const pct=Math.round(qIndex/questions.length*100);
-  const isMatch=q?.type==='match';
+  const [selected,  setSelected]  = useState(null);
+  const [checked,   setChecked]   = useState(false);
+  const [correct,   setCorrect]   = useState(null);
+  const [flash,     setFlash]     = useState(null);
+  const [matchDone, setMatchDone] = useState(false);
 
-  useEffect(()=>{ setSelected(null);setChecked(false);setCorrect(null);setFlash(null);setMatchDone(false); },[qIndex]);
-  if(!q) return null;
+  const q       = questions[qIndex];
+  const total   = questions.length;
+  const pct     = Math.round(qIndex / total * 100);
+  const isMatch = q?.type === 'match';
+
+  useEffect(() => {
+    setSelected(null); setChecked(false);
+    setCorrect(null); setFlash(null); setMatchDone(false);
+  }, [qIndex]);
+
+  if (!q) return null;
 
   function check() {
-    if(checked||selected===null) return;
+    if (checked || selected === null) return;
     setChecked(true);
-    const ok=String(selected)===String(q.answer);
-    if(ok){ setCorrect(true);setFlash('correct');incCorrect();addXP(10+Math.max(0,5-wrongCount));addGems(1);sfxCorrect(); }
-    else { setCorrect(false);setFlash('wrong');incWrong();sfxWrong();sfxHeart();if(hearts-1<=0){setTimeout(()=>{toast('💔 Nyawa habis! Coba lagi ya!');setTimeout(retryLesson,1200);},700);} }
-    setTimeout(()=>setFlash(null),450);
+    const ok = String(selected) === String(q.answer);
+    if (ok) {
+      setCorrect(true); setFlash('correct');
+      incCorrect(); addXP(10 + Math.max(0,5-wrongCount)); addGems(1); sfxCorrect();
+    } else {
+      setCorrect(false); setFlash('wrong');
+      incWrong(); loseHeart(); sfxWrong(); sfxHeart();
+      if (hearts - 1 <= 0) {
+        setTimeout(() => { toast('💔 Nyawa habis! Coba lagi!'); setTimeout(retryLesson,1200); }, 700);
+      }
+    }
+    setTimeout(() => setFlash(null), 450);
   }
-  function handleMatchDone() { setMatchDone(true);addXP(15);addGems(2);sfxCorrect();setFlash('correct');setTimeout(()=>{setFlash(null);nextQ();},800); }
 
-  const fb = correct===true ? `✅ Betul! ${CS[qIndex%CS.length]}` : correct===false ? `❌ Salah. ${WL[Math.floor(Math.random()*WL.length)]}` : '';
+  function handleMatchDone() {
+    setMatchDone(true); addXP(15); addGems(2); sfxCorrect();
+    setFlash('correct'); setTimeout(() => { setFlash(null); nextQ(); }, 800);
+  }
+
+  const fbMsg = correct === true
+    ? CORRECT_MSG[qIndex % CORRECT_MSG.length]
+    : correct === false
+    ? WRONG_MSG[Math.floor(Math.random() * WRONG_MSG.length)]
+    : '';
+
+  const robiEmotion = checked ? (correct ? 'excited' : 'sad') : 'happy';
 
   return (
-    <div className="fixed inset-0 z-50 bg-surface flex flex-col min-h-screen">
-      <ComboFlash combo={combo}/>
-      {flash&&<ScreenFlash type={flash} key={flash+Date.now()}/>}
+    <div className="fixed inset-0 z-50 bg-slate-50 flex flex-col">
+      <ComboFlash combo={combo} />
+      {flash && <ScreenFlash type={flash} key={flash + Date.now()} />}
 
-      {/* Top bar */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-ink-faint/50 bg-white sticky top-0 z-10">
-        <button onClick={()=>{sfxClick();goHomeFromLesson();}} className="w-9 h-9 rounded-xl bg-surface flex items-center justify-center text-ink-muted hover:text-bad hover:bg-bad-light transition-all text-lg font-bold">✕</button>
-        <div className="flex-1 bg-ink-faint rounded-full h-4 overflow-hidden">
-          <div className="h-full bg-gradient-to-r from-primary to-sky-400 rounded-full transition-all duration-500" style={{width:`${pct}%`}}/>
+      {/* ── Top bar ── */}
+      <div className="bg-white border-b border-slate-100 px-4 py-3 flex items-center gap-3 shadow-sm">
+        <button onClick={() => { sfxClick(); goHomeFromLesson(); }}
+                className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center
+                           text-slate-400 hover:bg-red-50 hover:text-red-400 transition-all font-bold">
+          ✕
+        </button>
+
+        {/* Progress bar */}
+        <div className="flex-1 flex items-center gap-2">
+          <div className="flex-1 bg-slate-200 rounded-full h-3 overflow-hidden">
+            <div className="h-full bg-gradient-to-r from-blue-400 to-blue-500 rounded-full
+                            transition-all duration-500 shadow-sm"
+                 style={{width:`${pct}%`}}/>
+          </div>
+          <span className="text-xs font-bold text-slate-400 w-10 text-right">
+            {qIndex}/{total}
+          </span>
         </div>
-        <div className="flex gap-0.5">{Array.from({length:maxHearts}).map((_,i)=><span key={i} className={`text-xl transition-all ${i>=hearts?'grayscale opacity-30 scale-90':''}`}>❤️</span>)}</div>
+
+        {/* Hearts */}
+        <div className="flex gap-1 shrink-0">
+          {Array.from({length: maxHearts}).map((_,i) => (
+            <span key={i}
+                  className={`text-lg transition-all duration-300
+                              ${i >= hearts ? 'grayscale opacity-25 scale-90' : 'scale-100'}`}>
+              ❤️
+            </span>
+          ))}
+        </div>
       </div>
 
-      {/* Body */}
-      <div className="flex-1 overflow-y-auto px-4 py-6 max-w-2xl mx-auto w-full flex flex-col gap-4">
-        <p className="font-title text-xl text-ink">{isMatch?'🔗 Cocokkan pasangannya!':q.question}</p>
-        <div className="flex items-end gap-3">
-          <Robi emotion={checked?(correct?'excited':'sad'):'happy'} size={70} anim={checked&&correct?'bounce':'float'}/>
-          <div className="flex-1 bg-white border-2 border-ink-faint rounded-2xl rounded-bl-sm px-4 py-3 font-bold text-sm text-ink leading-relaxed shadow-sm">
-            {isMatch?'Pasangkan gambar dengan namanya yang tepat!':q.question}
+      {/* ── Body ── */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-xl mx-auto px-4 py-6 flex flex-col gap-5">
+
+          {/* Question label */}
+          <div className="flex items-center gap-2">
+            <span className="bg-blue-100 text-blue-500 text-xs font-bold px-3 py-1 rounded-full border border-blue-200">
+              {isMatch ? '🔗 Cocokkan' : '❓ Pertanyaan'}
+            </span>
           </div>
+
+          {/* Question text */}
+          <h2 className="font-title text-2xl text-slate-800 leading-snug">
+            {isMatch ? 'Cocokkan gambar dengan namanya!' : q.question}
+          </h2>
+
+          {/* Robi speech bubble */}
+          <div className={`flex items-end gap-3 p-4 rounded-2xl border-2 transition-all duration-300
+                           ${checked && correct  ? 'bg-green-50 border-green-200'
+                           : checked && !correct ? 'bg-red-50 border-red-200'
+                           : 'bg-blue-50 border-blue-100'}`}>
+            <div className={checked && correct ? 'animate-bounce' : ''}>
+              <MiniRobi emotion={robiEmotion} />
+            </div>
+            <div className="flex-1">
+              {!checked && (
+                <p className="text-sm font-bold text-slate-500">
+                  {isMatch ? 'Tap gambar lalu tap namanya!' : 'Pilih jawaban yang benar ya!'}
+                </p>
+              )}
+              {checked && (
+                <div>
+                  <p className={`font-title text-base
+                                 ${correct ? 'text-green-600' : 'text-red-500'}`}>
+                    {correct ? '✅ Betul!' : '❌ Salah!'}
+                  </p>
+                  <p className="text-sm font-bold text-slate-500 mt-0.5">{fbMsg}</p>
+                  {!correct && (
+                    <p className="text-xs font-bold text-slate-400 mt-1">
+                      Jawaban: <span className="text-green-600">{q.answer}</span>
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Question visual */}
+          {!isMatch && <QuestionDisplay question={q} />}
+
+          {/* Match */}
+          {isMatch && !matchDone && (
+            <MatchQuestion pairs={q.pairs} onAllMatched={handleMatchDone} />
+          )}
+          {isMatch && matchDone && (
+            <div className="text-center py-6 font-title text-2xl text-green-600 animate-pop-in">
+              🎉 Semua cocok! Luar biasa!
+            </div>
+          )}
+
+          {/* Choice options */}
+          {!isMatch && (
+            <div className="grid grid-cols-2 gap-3">
+              {q.options.map(opt => {
+                let cls = '';
+                if (!checked) {
+                  cls = opt.value === selected
+                    ? 'bg-blue-50 border-blue-400 border-b-blue-600 text-blue-700 scale-[1.02]'
+                    : 'bg-white border-slate-200 border-b-slate-300 text-slate-700 hover:border-blue-300 hover:bg-blue-50 hover:-translate-y-0.5';
+                } else {
+                  if (opt.value === q.answer)
+                    cls = 'bg-green-50 border-green-400 border-b-green-600 text-green-700';
+                  else if (opt.value === selected)
+                    cls = 'bg-red-50 border-red-400 border-b-red-600 text-red-600 animate-shake';
+                  else
+                    cls = 'bg-white border-slate-100 text-slate-300 opacity-50';
+                }
+                return (
+                  <button key={opt.value}
+                    disabled={checked}
+                    onClick={() => { if (!checked) { sfxClick(); setSelected(opt.value); } }}
+                    className={`p-4 rounded-2xl border-2 border-b-4 font-bold text-sm
+                                text-center transition-all duration-150 ${cls}`}>
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
-        {!isMatch&&<QuestionDisplay question={q}/>}
-        {isMatch&&!matchDone&&<MatchQuestion pairs={q.pairs} onAllMatched={handleMatchDone}/>}
-        {isMatch&&matchDone&&<div className="text-center py-4 font-title text-2xl text-ok animate-pop-in">✅ Semua cocok! Luar biasa!</div>}
-        {!isMatch&&(
-          <div className="grid grid-cols-2 gap-3">
-            {q.options.map(opt=>{
-              let cls='opt-idle';
-              if(checked){ if(opt.value===q.answer) cls='opt-correct'; else if(opt.value===selected) cls='opt-wrong'; else cls='opt-idle opacity-50'; }
-              else if(opt.value===selected) cls='opt-selected';
-              return (
-                <button key={opt.value} className={`${cls} p-4 font-bold text-sm text-ink flex flex-col items-center gap-2`} disabled={checked}
-                        onClick={()=>{if(!checked){sfxClick();setSelected(opt.value);}}}>
-                  {opt.label}
-                </button>
-              );
-            })}
-          </div>
-        )}
       </div>
 
-      {/* Footer */}
-      {!isMatch&&(
-        <div className={`sticky bottom-0 px-4 py-4 border-t-2 flex items-center justify-between gap-4 transition-colors duration-300
-                         ${checked&&correct?'bg-ok-light border-ok':checked&&!correct?'bg-bad-light border-bad':'bg-white border-ink-faint/50'}`}>
-          <div className="flex-1">{checked&&<p className={`font-title text-base ${correct?'text-ok-dark':'text-bad-dark'}`}>{fb}</p>}</div>
-          {!checked
-            ? <button onClick={check} disabled={selected===null}
-                      className={`shrink-0 px-8 py-3 rounded-2xl font-title text-lg text-white border-b-4 transition-all ${selected!==null?'bg-primary border-primary-dark hover:-translate-y-1 active:translate-y-0 active:border-b-2':'bg-ink-faint border-ink-muted text-ink-muted cursor-not-allowed'}`}>PERIKSA</button>
-            : <button onClick={nextQ}
-                      className={`shrink-0 px-8 py-3 rounded-2xl font-title text-lg text-white border-b-4 hover:-translate-y-1 active:translate-y-0 active:border-b-2 transition-all ${correct?'bg-ok border-ok-dark':'bg-bad border-bad-dark'}`}>LANJUT →</button>
-          }
+      {/* ── Footer ── */}
+      {!isMatch && (
+        <div className={`border-t-2 px-4 py-4 transition-colors duration-300
+                         ${checked && correct  ? 'bg-green-50 border-green-200'
+                         : checked && !correct ? 'bg-red-50 border-red-200'
+                         : 'bg-white border-slate-100'}`}>
+          <div className="max-w-xl mx-auto flex justify-end">
+            {!checked ? (
+              <button onClick={check} disabled={selected === null}
+                className={`px-10 py-4 rounded-2xl font-title text-lg text-white border-b-4
+                            transition-all
+                            ${selected !== null
+                              ? 'bg-blue-500 border-blue-700 hover:-translate-y-0.5 active:translate-y-0 active:border-b-2 shadow-lg shadow-blue-200'
+                              : 'bg-slate-200 border-slate-300 text-slate-400 cursor-not-allowed'}`}>
+                PERIKSA
+              </button>
+            ) : (
+              <button onClick={nextQ}
+                className={`px-10 py-4 rounded-2xl font-title text-lg text-white border-b-4
+                            transition-all hover:-translate-y-0.5 active:translate-y-0 active:border-b-2
+                            shadow-lg
+                            ${correct
+                              ? 'bg-green-500 border-green-700 shadow-green-200'
+                              : 'bg-red-400 border-red-600 shadow-red-200'}`}>
+                LANJUT →
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>

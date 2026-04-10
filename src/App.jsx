@@ -13,17 +13,24 @@ export default function App() {
   const { toastMsg, clearToast, initQuests }               = useGameStore();
   const [splashDone, setSplashDone]                         = useState(false);
 
+  // ← Paksa loading maksimal 2 detik, tidak stuck selamanya
+  const [forceReady, setForceReady] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setForceReady(true), 2000);
+    return () => clearTimeout(t);
+  }, []);
+
   /* init Supabase auth on mount */
   useEffect(() => { init(); }, []);
 
-  /* auto-sync progress every 30 seconds while playing */
+  /* auto-sync progress setiap 30 detik */
   useEffect(() => {
     if (!user) return;
     const t = setInterval(() => syncProgress(), 30_000);
     return () => clearInterval(t);
   }, [user]);
 
-  /* also sync when tab/window closes */
+  /* sync saat tab ditutup */
   useEffect(() => {
     if (!user) return;
     const handler = () => syncProgress();
@@ -37,23 +44,24 @@ export default function App() {
     startBgMusic();
   }
 
-  /* ── Loading spinner (checking auth) ── */
-  if (authLoading) {
+  /* Loading — maksimal 2 detik */
+  if (authLoading && !forceReady) {
     return (
       <div className="fixed inset-0 bg-gradient-to-br from-blue-950 to-indigo-950
                       flex flex-col items-center justify-center gap-4">
         <div className="text-6xl animate-robi-bobble">🤖</div>
-        <p className="font-title text-xl text-white animate-attract-pulse">Memuat RobiLearn...</p>
+        <p className="font-title text-xl text-white animate-attract-pulse">
+          Memuat RobiLearn...
+        </p>
       </div>
     );
   }
 
-  /* ── Not logged in → show login ── */
+  /* Belum login → tampilkan login */
   if (!user) return <LoginScreen />;
 
   return (
     <div className="relative min-h-screen bg-surface font-nunito">
-      {/* Splash (after login) */}
       {!splashDone && <SplashScreen onDone={handleSplashDone} />}
 
       {splashDone && (

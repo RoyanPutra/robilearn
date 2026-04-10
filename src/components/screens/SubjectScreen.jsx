@@ -2,8 +2,14 @@ import { useGameStore }  from '../../store/gameStore';
 import { useAuthStore }  from '../../store/authStore';
 import { SUBJECTS }      from '../../data/subjects';
 import { CURRICULUM }    from '../../data/curriculum';
-import Robi              from '../ui/Robi';
 import { sfxClick }      from '../../lib/audio';
+
+const SUBJECT_META = {
+  math:        { bg:'bg-orange-400',  light:'bg-orange-50',  text:'text-orange-500',  border:'border-orange-300',  icon:'🔢', desc:'Hitung & berhitung seru' },
+  pengetahuan: { bg:'bg-blue-400',    light:'bg-blue-50',    text:'text-blue-500',    border:'border-blue-300',    icon:'🌍', desc:'Kenali dunia sekitarmu' },
+  bahasa:      { bg:'bg-green-400',   light:'bg-green-50',   text:'text-green-500',   border:'border-green-300',   icon:'📚', desc:'Baca, tulis & bercerita' },
+  seni:        { bg:'bg-purple-400',  light:'bg-purple-50',  text:'text-purple-500',  border:'border-purple-300',  icon:'🎨', desc:'Warna, bentuk & kreasi' },
+};
 
 export default function SubjectScreen() {
   const { pickSubject, completedLevels } = useGameStore();
@@ -11,45 +17,94 @@ export default function SubjectScreen() {
   const name = profile?.username || user?.email?.split('@')[0] || 'Pejuang';
 
   function getProgress(sid) {
-    const total = ['dasar','menengah','tinggi'].reduce((acc,dk) => {
-      const s = CURRICULUM[`${sid}_${dk}`]||[];
-      return acc + s.reduce((a,st)=>a+st.levels.length,0);
-    }, 0);
+    const total = ['dasar','menengah','tinggi'].reduce((acc,dk)=>{
+      return acc+(CURRICULUM[`${sid}_${dk}`]||[]).reduce((a,st)=>a+st.levels.length,0);
+    },0);
     const done = completedLevels.filter(id=>id.startsWith(sid)).length;
-    return { done, total };
+    return { done, total, pct: total>0?Math.round(done/total*100):0 };
   }
 
+  const totalDone  = completedLevels.length;
+  const totalLevel = SUBJECTS.reduce((acc,s)=>acc+getProgress(s.id).total,0);
+  const overallPct = totalLevel>0?Math.round(totalDone/totalLevel*100):0;
+
   return (
-    <div className="flex flex-col gap-6 pb-8">
-      {/* Greeting */}
-      <div className="flex items-center gap-4 card p-5">
-        <Robi emotion="happy" size={72} anim="float"/>
-        <div>
-          <h1 className="font-title text-2xl text-ink">Halo, {name}! 👋</h1>
-          <p className="text-ink-muted font-bold text-sm mt-1">Mau belajar apa hari ini?</p>
+    <div className="flex flex-col gap-5 pb-10 max-w-2xl mx-auto">
+
+      {/* ── Greeting card ── */}
+      <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-3xl p-5
+                      shadow-lg shadow-blue-200 relative overflow-hidden">
+        <div className="absolute -right-6 -top-6 w-32 h-32 bg-white/10 rounded-full"/>
+        <div className="absolute -right-2 bottom-0 w-20 h-20 bg-white/10 rounded-full"/>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-blue-200 text-xs font-bold uppercase tracking-widest">Selamat Datang 👋</p>
+            <h1 className="font-title text-2xl text-white mt-0.5">{name}!</h1>
+            <p className="text-blue-100 text-xs font-bold mt-1">Ayo lanjutkan perjalanan belajarmu</p>
+          </div>
+          <div className="text-right">
+            <div className="bg-white/20 rounded-2xl px-4 py-3 text-center">
+              <p className="font-title text-3xl text-white">{overallPct}%</p>
+              <p className="text-blue-200 text-[10px] font-bold">Selesai</p>
+            </div>
+          </div>
         </div>
+        {/* Overall progress bar */}
+        <div className="mt-3 bg-white/20 rounded-full h-2 overflow-hidden">
+          <div className="h-full bg-white rounded-full transition-all duration-700"
+               style={{width:`${overallPct}%`}}/>
+        </div>
+        <p className="text-blue-200 text-[10px] font-bold mt-1">{totalDone} dari {totalLevel} level selesai</p>
       </div>
 
-      {/* Subject grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {/* ── Section title ── */}
+      <div className="flex items-center gap-2 px-1">
+        <div className="w-1 h-5 bg-blue-500 rounded-full"/>
+        <h2 className="font-title text-lg text-slate-700">Pilih Mata Pelajaran</h2>
+      </div>
+
+      {/* ── Subject grid ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {SUBJECTS.map(s => {
-          const { done, total } = getProgress(s.id);
-          const pct = total>0 ? Math.round(done/total*100) : 0;
+          const m = SUBJECT_META[s.id] || {};
+          const { done, total, pct } = getProgress(s.id);
           return (
-            <button key={s.id} onClick={()=>{sfxClick();pickSubject(s.id);}}
-                    className={`relative overflow-hidden text-left rounded-3xl p-6 bg-gradient-to-br ${s.color} border-b-4 ${s.border} shadow-lg hover:-translate-y-2 hover:shadow-2xl active:translate-y-0 active:border-b-2 transition-all duration-200 group`}>
-              <span className="absolute top-0 left-[-80%] w-[55%] h-full bg-gradient-to-r from-transparent via-white/25 to-transparent -skew-x-12 group-hover:animate-shimmer pointer-events-none"/>
-              <div className="flex items-start gap-4">
-                <span className="text-5xl drop-shadow animate-robi-float" style={{animationDelay:`${Math.random()*2}s`}}>{s.icon}</span>
+            <button key={s.id}
+              onClick={()=>{sfxClick();pickSubject(s.id);}}
+              className={`group bg-white border-2 ${m.border} rounded-3xl p-5 text-left
+                         shadow-sm hover:shadow-md hover:-translate-y-1
+                         active:translate-y-0 transition-all duration-200`}>
+
+              {/* Icon + title row */}
+              <div className="flex items-start gap-3 mb-3">
+                <div className={`${m.bg} w-12 h-12 rounded-2xl flex items-center justify-center
+                                 text-2xl shadow-sm group-hover:scale-110 transition-transform`}>
+                  {m.icon}
+                </div>
                 <div className="flex-1 min-w-0">
-                  <h2 className="font-title text-xl text-white">{s.name}</h2>
-                  <p className="text-white/80 text-xs font-bold mt-1 leading-relaxed">{s.desc}</p>
-                  <div className="mt-3">
-                    <div className="w-full bg-black/20 rounded-full h-2 overflow-hidden">
-                      <div className="h-full bg-white/80 rounded-full transition-all duration-700" style={{width:`${pct}%`}}/>
-                    </div>
-                    <p className="text-white/70 text-xs font-bold mt-1">{done>0?`${done}/${total} level selesai`:'Belum mulai'}</p>
-                  </div>
+                  <h3 className="font-title text-base text-slate-700">{s.name}</h3>
+                  <p className="text-slate-400 text-xs font-bold mt-0.5">{m.desc}</p>
+                </div>
+                {/* Done badge */}
+                {pct === 100 && (
+                  <span className="bg-green-100 text-green-600 text-[10px] font-bold
+                                   px-2 py-1 rounded-full border border-green-200">
+                    ✓ Selesai
+                  </span>
+                )}
+              </div>
+
+              {/* Progress */}
+              <div className="mt-1">
+                <div className={`w-full ${m.light} rounded-full h-2.5 overflow-hidden border ${m.border}`}>
+                  <div className={`h-full ${m.bg} rounded-full transition-all duration-700`}
+                       style={{width:`${pct}%`}}/>
+                </div>
+                <div className="flex justify-between mt-1.5">
+                  <span className="text-[10px] font-bold text-slate-400">
+                    {done > 0 ? `${done}/${total} level` : 'Belum mulai'}
+                  </span>
+                  <span className={`text-[10px] font-bold ${m.text}`}>{pct}%</span>
                 </div>
               </div>
             </button>
