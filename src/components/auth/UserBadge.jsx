@@ -15,46 +15,55 @@ export default function UserBadge({ light = false }) {
     <div className="relative">
       <button
         onClick={() => { sfxClick(); setOpen(o => !o); }}
-        className={`flex items-center gap-2 rounded-xl px-2.5 py-1.5
-                    hover:scale-105 transition-all
+        className={`flex items-center gap-2 rounded-2xl px-3 py-1.5
+                    border-2 transition-all hover:scale-105
                     ${light
-                      ? 'bg-white/20 hover:bg-white/30 text-white'
-                      : 'bg-white border border-ink-faint hover:bg-primary-light hover:border-primary text-ink shadow-sm'}`}
+                      ? 'bg-white/20 border-white/30 hover:bg-white/30'
+                      : 'bg-white border-slate-200 hover:border-blue-300 hover:bg-blue-50 shadow-sm'}`}
       >
-        {/* Avatar circle */}
+        {/* Avatar */}
         <div className={`w-6 h-6 rounded-full flex items-center justify-center
-                         font-title text-xs shrink-0
-                         ${light ? 'bg-white text-primary' : 'bg-primary text-white'}`}>
+                         font-title text-xs shrink-0 shadow-sm
+                         ${light ? 'bg-white text-blue-500' : 'bg-blue-500 text-white'}`}>
           {initial}
         </div>
-        <span className={`text-xs font-bold max-w-[70px] truncate
-                          ${light ? 'text-white' : 'text-ink'}`}>
+        <span className={`text-xs font-bold max-w-[64px] truncate
+                          ${light ? 'text-white' : 'text-slate-700'}`}>
           {name}
         </span>
-        <span className={`text-[10px] ${light ? 'text-white/60' : 'text-ink-muted'}`}>▾</span>
+        <span className={`text-[10px] ${light ? 'text-white/50' : 'text-slate-400'}`}>▾</span>
       </button>
 
       {/* Dropdown */}
       {open && (
-        <div className="absolute top-10 right-0 z-50 bg-white border border-ink-faint
-                        rounded-2xl shadow-xl p-4 min-w-[200px] animate-pop-in">
-          <p className="text-xs text-ink-muted font-bold mb-1">Login sebagai</p>
-          <p className="text-sm font-bold text-ink mb-3 truncate">{user.email}</p>
-          <button
-            onClick={async () => { sfxClick(); await logout(); setOpen(false); }}
-            className="w-full bg-bad-light text-bad-dark border border-bad
-                       rounded-xl py-2 text-sm font-bold
-                       hover:bg-bad hover:text-white transition-all"
-          >
-            🚪 Keluar
-          </button>
-          <button
-            onClick={() => setOpen(false)}
-            className="w-full mt-2 text-ink-muted text-xs font-bold py-1"
-          >
-            Batal
-          </button>
-        </div>
+        <>
+          {/* Backdrop */}
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)}/>
+
+          <div className="absolute top-11 right-0 z-50 bg-white border-2 border-slate-100
+                          rounded-2xl shadow-xl p-4 min-w-[200px] animate-pop-in">
+            <div className="flex items-center gap-3 mb-3 pb-3 border-b border-slate-100">
+              <div className="w-9 h-9 rounded-xl bg-blue-500 flex items-center justify-center
+                              font-title text-base text-white shadow-sm">
+                {initial}
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-slate-700 truncate">{name}</p>
+                <p className="text-[10px] text-slate-400 font-bold truncate">{user.email}</p>
+              </div>
+            </div>
+
+            <button
+              onClick={async () => { sfxClick(); await logout(); setOpen(false); }}
+              className="w-full bg-red-50 text-red-500 border-2 border-red-100
+                         rounded-xl py-2.5 text-sm font-bold
+                         hover:bg-red-500 hover:text-white hover:border-red-500
+                         transition-all flex items-center justify-center gap-2"
+            >
+              🚪 Keluar
+            </button>
+          </div>
+        </>
       )}
     </div>
   );

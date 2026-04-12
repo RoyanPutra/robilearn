@@ -434,3 +434,123 @@ export function generateLesson(levelData) {
 
   return questions;
 }
+
+
+/* ══════════════════════════════════════
+   TAMBAHAN: Generator soal tipe baru
+══════════════════════════════════════ */
+
+/* ── Word Builder pools ── */
+const WORD_POOL = [
+  { word:'APEL',    emoji:'🍎', hint:'Buah berwarna merah' },
+  { word:'BUKU',    emoji:'📚', hint:'Tempat ilmu pengetahuan' },
+  { word:'KUCING',  emoji:'🐱', hint:'Hewan peliharaan berbulu' },
+  { word:'RUMAH',   emoji:'🏠', hint:'Tempat tinggal kita' },
+  { word:'POHON',   emoji:'🌳', hint:'Tumbuhan yang tinggi' },
+  { word:'PISANG',  emoji:'🍌', hint:'Buah berwarna kuning' },
+  { word:'GAJAH',   emoji:'🐘', hint:'Hewan berbelalai panjang' },
+  { word:'SINGA',   emoji:'🦁', hint:'Raja hutan' },
+  { word:'BUNGA',   emoji:'🌸', hint:'Tumbuhan yang harum' },
+  { word:'IKAN',    emoji:'🐟', hint:'Hewan yang hidup di air' },
+  { word:'BOLA',    emoji:'⚽', hint:'Dipakai untuk bermain' },
+  { word:'WORTEL',  emoji:'🥕', hint:'Sayur berwarna oranye' },
+  { word:'ZEBRA',   emoji:'🦓', hint:'Hewan bergaris hitam-putih' },
+  { word:'MOBIL',   emoji:'🚗', hint:'Kendaraan beroda empat' },
+  { word:'BULAN',   emoji:'🌙', hint:'Bersinar di malam hari' },
+  { word:'NASI',    emoji:'🍚', hint:'Makanan pokok orang Indonesia' },
+  { word:'SEPATU',  emoji:'👟', hint:'Dipakai di kaki saat keluar' },
+  { word:'JERUK',   emoji:'🍊', hint:'Buah berwarna oranye yang asam' },
+];
+
+/* ── TypeAnswer pools ── */
+const TYPE_MATH = [
+  { q:'2 + 3 = ?',   a:'5',  emoji:'➕' },
+  { q:'5 + 4 = ?',   a:'9',  emoji:'➕' },
+  { q:'7 - 3 = ?',   a:'4',  emoji:'➖' },
+  { q:'10 - 6 = ?',  a:'4',  emoji:'➖' },
+  { q:'3 × 2 = ?',   a:'6',  emoji:'✖️' },
+  { q:'4 × 2 = ?',   a:'8',  emoji:'✖️' },
+  { q:'6 ÷ 2 = ?',   a:'3',  emoji:'➗' },
+  { q:'10 ÷ 2 = ?',  a:'5',  emoji:'➗' },
+  { q:'4 + 5 = ?',   a:'9',  emoji:'➕' },
+  { q:'8 - 5 = ?',   a:'3',  emoji:'➖' },
+];
+const TYPE_BAHASA = [
+  { q:'Apa nama ibukota Indonesia?',       a:'Jakarta',    emoji:'🇮🇩' },
+  { q:'Apa warna daun yang sehat?',        a:'Hijau',      emoji:'🌿' },
+  { q:'Berapa kaki kucing?',               a:'4',          emoji:'🐱' },
+  { q:'Apa nama planet kita?',             a:'Bumi',       emoji:'🌍' },
+  { q:'Siapa nama presiden pertama RI?',   a:'Soekarno',   emoji:'🏛️' },
+  { q:'Berapa hari dalam seminggu?',       a:'7',          emoji:'📅' },
+  { q:'Apa nama hewan terbesar di darat?', a:'Gajah',      emoji:'🐘' },
+  { q:'Berapa bulan dalam setahun?',       a:'12',         emoji:'📆' },
+];
+
+/* ── PictureQuiz pools ── */
+const PIC_ANIMALS = [
+  { q:'Mana yang merupakan hewan laut?', answer:'Ikan', options:[{emoji:'🐟',label:'Ikan'},{emoji:'🦁',label:'Singa'},{emoji:'🐘',label:'Gajah'},{emoji:'🐶',label:'Anjing'}] },
+  { q:'Mana yang bisa terbang?',         answer:'Burung', options:[{emoji:'🐦',label:'Burung'},{emoji:'🐟',label:'Ikan'},{emoji:'🐮',label:'Sapi'},{emoji:'🐢',label:'Kura-kura'}] },
+  { q:'Mana hewan yang bertelur?',       answer:'Ayam', options:[{emoji:'🐔',label:'Ayam'},{emoji:'🐶',label:'Anjing'},{emoji:'🐱',label:'Kucing'},{emoji:'🐄',label:'Sapi'}] },
+  { q:'Mana yang merupakan serangga?',   answer:'Lebah', options:[{emoji:'🐝',label:'Lebah'},{emoji:'🐟',label:'Ikan'},{emoji:'🦁',label:'Singa'},{emoji:'🐸',label:'Katak'}] },
+  { q:'Mana hewan pemakan rumput?',      answer:'Sapi', options:[{emoji:'🐄',label:'Sapi'},{emoji:'🦁',label:'Singa'},{emoji:'🐺',label:'Serigala'},{emoji:'🦊',label:'Rubah'}] },
+];
+const PIC_FOODS = [
+  { q:'Mana yang termasuk sayuran?',   answer:'Wortel', options:[{emoji:'🥕',label:'Wortel'},{emoji:'🍎',label:'Apel'},{emoji:'🍌',label:'Pisang'},{emoji:'🍓',label:'Stroberi'}] },
+  { q:'Mana yang termasuk buah?',      answer:'Mangga', options:[{emoji:'🥭',label:'Mangga'},{emoji:'🥦',label:'Brokoli'},{emoji:'🥕',label:'Wortel'},{emoji:'🌽',label:'Jagung'}] },
+  { q:'Mana makanan yang manis?',      answer:'Kue', options:[{emoji:'🎂',label:'Kue'},{emoji:'🍚',label:'Nasi'},{emoji:'🥦',label:'Brokoli'},{emoji:'🥕',label:'Wortel'}] },
+  { q:'Mana minuman yang sehat?',      answer:'Air Putih', options:[{emoji:'💧',label:'Air Putih'},{emoji:'🥤',label:'Soda'},{emoji:'☕',label:'Kopi'},{emoji:'🍺',label:'Bir'}] },
+];
+const PIC_SHAPES = [
+  { q:'Mana bentuk lingkaran?',        answer:'⭕', options:[{emoji:'⭕',label:'⭕'},{emoji:'🔺',label:'🔺'},{emoji:'🟦',label:'🟦'},{emoji:'⭐',label:'⭐'}] },
+  { q:'Mana bentuk bintang?',          answer:'⭐', options:[{emoji:'⭐',label:'⭐'},{emoji:'⭕',label:'⭕'},{emoji:'🟦',label:'🟦'},{emoji:'🔺',label:'🔺'}] },
+  { q:'Mana bentuk segitiga?',         answer:'🔺', options:[{emoji:'🔺',label:'🔺'},{emoji:'⭕',label:'⭕'},{emoji:'🟦',label:'🟦'},{emoji:'⭐',label:'⭐'}] },
+];
+
+/* ── Speed mode pools (soal cepat) ── */
+const SPEED_MATH = [
+  {q:'1+1',a:'2'},{q:'2+2',a:'4'},{q:'3+3',a:'6'},{q:'4+4',a:'8'},{q:'5+5',a:'10'},
+  {q:'2+3',a:'5'},{q:'3+4',a:'7'},{q:'4+5',a:'9'},{q:'5+6',a:'11'},{q:'6+4',a:'10'},
+  {q:'5-2',a:'3'},{q:'7-3',a:'4'},{q:'8-4',a:'4'},{q:'9-5',a:'4'},{q:'10-3',a:'7'},
+  {q:'2×2',a:'4'},{q:'2×3',a:'6'},{q:'2×4',a:'8'},{q:'2×5',a:'10'},{q:'5×2',a:'10'},
+];
+
+/* ── Generators untuk tipe baru ── */
+export function generateWordBuilder() {
+  const item = rnd(WORD_POOL);
+  return { type:'word_builder', qtype:'word_builder', word:item.word, emoji:item.emoji, hint:item.hint };
+}
+
+export function generateTypeAnswer(subject = 'math') {
+  const pool = subject === 'math' ? TYPE_MATH : TYPE_BAHASA;
+  const item = rnd(pool);
+  return { type:'type_answer', qtype:'type_answer', question:item.q, answer:item.a, emoji:item.emoji };
+}
+
+export function generatePictureQuiz(cat = 'animals') {
+  const pool = cat === 'foods' ? PIC_FOODS : cat === 'shapes' ? PIC_SHAPES : PIC_ANIMALS;
+  const item = rnd(pool);
+  return { type:'picture_quiz', qtype:'picture_quiz', question:item.q, answer:item.answer, options:item.options };
+}
+
+export function generateSpeedQuestion() {
+  const item = rnd(SPEED_MATH);
+  // Buat pilihan jawaban
+  const correct = parseInt(item.a);
+  const opts = [correct, correct+1, correct-1, correct+2].filter(x=>x>=0).slice(0,4);
+  return mkC('speed', {type:'emoji',emoji:'⚡'}, `${item.q} = ?`, item.a,
+    opts.map(String));
+}
+
+/* ── generateLesson extended ── */
+export function generateLessonExtended(levelData) {
+  const { type, p = {} } = levelData;
+
+  // Tipe khusus baru
+  if (type === 'word_builder')  return Array.from({length: p.count||4}, generateWordBuilder);
+  if (type === 'type_answer')   return Array.from({length: p.count||6}, () => generateTypeAnswer(p.subject||'math'));
+  if (type === 'picture_quiz')  return Array.from({length: p.count||5}, () => generatePictureQuiz(p.cat||'animals'));
+  if (type === 'speed_mode')    return Array.from({length: p.count||10}, generateSpeedQuestion);
+
+  // Default ke generateLesson biasa
+  return generateLesson(levelData);
+}
