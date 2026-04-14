@@ -78,6 +78,10 @@ export default function LeftSidebar() {
       <NavBtn icon="🏠" label="Beranda"
               active={screen==='subject'}
               onClick={() => { sfxClick(); goTo('subject'); }}/>
+      
+      <NavBtn icon="🎮" label="Ruang Game"
+        active={screen==='gameHub'}
+        onClick={() => { sfxClick(); goTo('gameHub'); }}/>
 
       {/* ── User ── */}
       <div className="mt-auto pt-3 border-t border-slate-100">
