@@ -15,9 +15,7 @@ import GameHubScreen         from '../screens/GameHubScreen';
 
 export default function AppShell() {
   const { screen } = useGameStore();
-
-  const isLesson  = screen === 'lesson';
-  const isFullscreen = screen === 'lesson'; // lesson pakai full screen
+  const isLesson = screen === 'lesson';
 
   const render = {
     subject:     <SubjectScreen />,
@@ -35,9 +33,10 @@ export default function AppShell() {
       <FloatingControls />
       <TopBar />
 
-      <div className={`flex min-h-screen ${isLesson ? '' : 'max-w-[1280px] mx-auto px-4'}`}>
+      <div className={`flex min-h-screen
+                       ${isLesson ? '' : 'max-w-[1280px] mx-auto px-3 lg:px-4'}`}>
         {!isLesson && <LeftSidebar />}
-        <main className="flex-1 min-w-0 py-4">{render}</main>
+        <main className="flex-1 min-w-0 py-3 lg:py-4">{render}</main>
         {!isLesson && <RightSidebar />}
       </div>
     </>
