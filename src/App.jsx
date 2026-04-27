@@ -6,31 +6,33 @@ import LoginScreen        from './components/auth/LoginScreen';
 import SplashScreen       from './components/screens/SplashScreen';
 import AttractMode        from './components/ui/AttractMode';
 import Toast              from './components/ui/Toast';
+import ErrorBoundary      from './components/ui/ErrorBoundary';
+import { LoadingScreen }  from './components/ui/SkeletonLoader';
 import { startBgMusic }   from './lib/audio';
 
 export default function App() {
   const { user, loading: authLoading, init, syncProgress } = useAuthStore();
   const { toastMsg, clearToast, initQuests }               = useGameStore();
   const [splashDone, setSplashDone]                         = useState(false);
+  const [forceReady, setForceReady]                         = useState(false);
 
-  // ← Paksa loading maksimal 2 detik, tidak stuck selamanya
-  const [forceReady, setForceReady] = useState(false);
+  /* Force ready after 2 seconds max */
   useEffect(() => {
     const t = setTimeout(() => setForceReady(true), 2000);
     return () => clearTimeout(t);
   }, []);
 
-  /* init Supabase auth on mount */
+  /* Init Supabase auth */
   useEffect(() => { init(); }, []);
 
-  /* auto-sync progress setiap 30 detik */
+  /* Auto-sync every 30s */
   useEffect(() => {
     if (!user) return;
     const t = setInterval(() => syncProgress(), 30_000);
     return () => clearInterval(t);
   }, [user]);
 
-  /* sync saat tab ditutup */
+  /* Sync on tab close */
   useEffect(() => {
     if (!user) return;
     const handler = () => syncProgress();
@@ -44,34 +46,44 @@ export default function App() {
     startBgMusic();
   }
 
-  /* Loading — maksimal 2 detik */
+  /* ── Loading screen ── */
   if (authLoading && !forceReady) {
     return (
       <div className="fixed inset-0 bg-gradient-to-br from-blue-950 to-indigo-950
                       flex flex-col items-center justify-center gap-4">
-        <div className="text-6xl animate-robi-bobble">🤖</div>
-        <p className="font-title text-xl text-white animate-attract-pulse">
-          Memuat RobiLearn...
-        </p>
+        <LoadingScreen message="Memuat RobiLearn..." />
       </div>
     );
   }
 
-  /* Belum login → tampilkan login */
-  if (!user) return <LoginScreen />;
+  /* ── Not logged in ── */
+  if (!user) {
+    return (
+      <ErrorBoundary>
+        <LoginScreen />
+      </ErrorBoundary>
+    );
+  }
 
   return (
-    <div className="relative min-h-screen bg-surface font-nunito">
-      {!splashDone && <SplashScreen onDone={handleSplashDone} />}
+    <ErrorBoundary>
+      <div className="relative min-h-screen bg-surface font-nunito">
 
-      {splashDone && (
-        <>
-          <AppShell />
-          <AttractMode />
-        </>
-      )}
+        {/* Splash */}
+        {!splashDone && <SplashScreen onDone={handleSplashDone} />}
 
-      {toastMsg && <Toast msg={toastMsg} onDone={clearToast} />}
-    </div>
+        {splashDone && (
+          <>
+            {/* Wrap each major section in ErrorBoundary */}
+            <ErrorBoundary>
+              <AppShell />
+            </ErrorBoundary>
+            <AttractMode />
+          </>
+        )}
+
+        {toastMsg && <Toast msg={toastMsg} onDone={clearToast} />}
+      </div>
+    </ErrorBoundary>
   );
 }
